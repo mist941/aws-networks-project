@@ -47,6 +47,10 @@ resource "aws_route_table" "public_rt" {
 
 resource "aws_route_table" "private_rt" {
   vpc_id = aws_vpc.main_vpc.id
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.public_nat_gateway.id
+  }
   tags = {
     Name = "private_rt"
   }
@@ -62,4 +66,20 @@ resource "aws_route_table_association" "private_subnet_associations" {
   count          = length(aws_subnet.private_subnets)
   subnet_id      = aws_subnet.private_subnets[count.index].id
   route_table_id = aws_route_table.private_rt.id
+}
+
+resource "aws_eip" "aws_public_eip" {
+  public_ipv4_pool = "amazon"
+  tags = {
+    Name = "aws_public_eip"
+  }
+}
+
+resource "aws_nat_gateway" "public_nat_gateway" {
+  allocation_id     = aws_eip.aws_public_eip.id
+  subnet_id         = aws_subnet.public_subnets[0].id
+  connectivity_type = "public"
+  tags = {
+    Name = "public_nat_gateway"
+  }
 }
