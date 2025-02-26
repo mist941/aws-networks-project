@@ -83,3 +83,30 @@ resource "aws_nat_gateway" "public_nat_gateway" {
     Name = "public_nat_gateway"
   }
 }
+
+data "aws_ssm_parameter" "client_vpn_certificate" {
+  name = "vpn_server_certificate_arn"
+}
+
+resource "aws_cloudwatch_log_group" "client_vpn_log_group" {
+  name = "client_vpn_log_group"
+}
+
+resource "client_vpn_endpoint" "vpn" {
+  description            = "Client VPN endpoint"
+  server_certificate_arn = data.aws_ssm_parameter.client_vpn_certificate.value
+  client_cidr_block      = "10.0.0.0/22"
+  connection_log_options {
+    enabled              = true
+    cloudwatch_log_group = aws_cloudwatch_log_group.client_vpn_log_group.name
+  }
+  authentication_options {
+    type                       = "certificate-authentication"
+    root_certificate_chain_arn = data.aws_ssm_parameter.client_vpn_certificate.value
+  }
+}
+
+resource "aws_client_vpn_network_association" "vpn_assoc" {
+  client_vpn_endpoint_id = client_vpn_endpoint.vpn.id
+  subnet_id              = aws_subnet.public_subnets[0].id
+}
