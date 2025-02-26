@@ -89,7 +89,8 @@ data "aws_ssm_parameter" "client_vpn_certificate" {
 }
 
 resource "aws_cloudwatch_log_group" "client_vpn_log_group" {
-  name = "client_vpn_log_group"
+  name              = "client_vpn_log_group"
+  retention_in_days = 30
 }
 
 resource "client_vpn_endpoint" "vpn" {
@@ -108,5 +109,5 @@ resource "client_vpn_endpoint" "vpn" {
 
 resource "aws_client_vpn_network_association" "vpn_assoc" {
   client_vpn_endpoint_id = client_vpn_endpoint.vpn.id
-  subnet_id              = aws_subnet.public_subnets[0].id
+  subnet_id              = aws_subnet.private_subnets[0].id
 }
