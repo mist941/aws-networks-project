@@ -173,7 +173,7 @@ resource "aws_security_group" "alb_sg" {
   egress {
     description     = "Allow all outbound traffic to private EC2 instances"
     from_port       = 0
-    to_port         = 65535
+    to_port         = 0
     protocol        = "-1"
     security_groups = [aws_security_group.private_ec2_sg.id]
   }
