@@ -1,3 +1,5 @@
+# Main VPC configuration
+# Creates a Virtual Private Cloud with specified CIDR block
 resource "aws_vpc" "main_vpc" {
   cidr_block       = var.vpc_cidr_block
   instance_tenancy = "default"
@@ -6,6 +8,8 @@ resource "aws_vpc" "main_vpc" {
   }
 }
 
+# Public subnet configuration
+# Creates public subnets in different availability zones with auto-assigned public IPs
 resource "aws_subnet" "public_subnets" {
   count                   = length(var.public_subnet_ciders)
   vpc_id                  = aws_vpc.main_vpc.id
@@ -17,6 +21,8 @@ resource "aws_subnet" "public_subnets" {
   }
 }
 
+# Private subnet configuration
+# Creates private subnets in different availability zones without public IP assignment
 resource "aws_subnet" "private_subnets" {
   count             = length(var.private_subnet_ciders)
   vpc_id            = aws_vpc.main_vpc.id
@@ -27,6 +33,8 @@ resource "aws_subnet" "private_subnets" {
   }
 }
 
+# Internet Gateway configuration
+# Enables communication between VPC and the internet
 resource "aws_internet_gateway" "main_igw" {
   vpc_id = aws_vpc.main_vpc.id
   tags = {
@@ -34,6 +42,8 @@ resource "aws_internet_gateway" "main_igw" {
   }
 }
 
+# Public Route Table
+# Routes traffic from public subnets to the internet via IGW
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main_vpc.id
   route {
@@ -45,6 +55,8 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
+# Private Route Table
+# Routes traffic from private subnets through NAT Gateway for internet access
 resource "aws_route_table" "private_rt" {
   vpc_id = aws_vpc.main_vpc.id
   route {
@@ -56,18 +68,24 @@ resource "aws_route_table" "private_rt" {
   }
 }
 
+# Public subnet route table associations
+# Associates public subnets with the public route table
 resource "aws_route_table_association" "public_subnet_associations" {
   count          = length(aws_subnet.public_subnets)
   subnet_id      = aws_subnet.public_subnets[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
 
+# Private subnet route table associations
+# Associates private subnets with the private route table
 resource "aws_route_table_association" "private_subnet_associations" {
   count          = length(aws_subnet.private_subnets)
   subnet_id      = aws_subnet.private_subnets[count.index].id
   route_table_id = aws_route_table.private_rt.id
 }
 
+# Elastic IP for NAT Gateway
+# Allocates a static public IP from Amazon's pool
 resource "aws_eip" "aws_public_eip" {
   public_ipv4_pool = "amazon"
   tags = {
@@ -75,6 +93,8 @@ resource "aws_eip" "aws_public_eip" {
   }
 }
 
+# NAT Gateway configuration
+# Enables private subnet instances to access internet while remaining private
 resource "aws_nat_gateway" "public_nat_gateway" {
   allocation_id     = aws_eip.aws_public_eip.id
   subnet_id         = aws_subnet.public_subnets[0].id
@@ -84,6 +104,9 @@ resource "aws_nat_gateway" "public_nat_gateway" {
   }
 }
 
+# Bastion Host Security Group
+# Defines security rules for the bastion host/VPN endpoint
+# Allows SSH access from VPC and HTTPS for Cloudflare Tunnel/VPN
 resource "aws_security_group" "bastion_sg" {
   name        = "bastion_sg"
   description = "Cloudflare Tunnel or VPN"
@@ -113,6 +136,9 @@ resource "aws_security_group" "bastion_sg" {
   }
 }
 
+# Private EC2 Security Group
+# Defines security rules for private EC2 instances
+# Allows SSH from bastion and web traffic from ALB
 resource "aws_security_group" "private_ec2_sg" {
   name        = "private_ec2_sg"
   description = "Private EC2 security group"
@@ -149,6 +175,9 @@ resource "aws_security_group" "private_ec2_sg" {
   }
 }
 
+# Application Load Balancer Security Group
+# Defines security rules for the ALB
+# Allows HTTP/HTTPS from internet and forwards to private instances
 resource "aws_security_group" "alb_sg" {
   name        = "alb_sg"
   description = "Security Group for Application Load Balancer"
@@ -181,6 +210,9 @@ resource "aws_security_group" "alb_sg" {
   depends_on = [aws_security_group.private_ec2_sg]
 }
 
+# Public Network ACL
+# Network level firewall for public subnets
+# Allows all TCP traffic in and out (relies on security groups for detailed filtering)
 resource "aws_network_acl" "public_acl" {
   vpc_id     = aws_vpc.main_vpc.id
   subnet_ids = [for s in aws_subnet.public_subnets : s.id]
@@ -202,6 +234,9 @@ resource "aws_network_acl" "public_acl" {
   }
 }
 
+# Private Network ACL
+# Network level firewall for private subnets
+# Restricts inbound access to VPC CIDR and allows all outbound
 resource "aws_network_acl" "private_acl" {
   vpc_id     = aws_vpc.main_vpc.id
   subnet_ids = [for s in aws_subnet.private_subnets : s.id]
@@ -247,6 +282,9 @@ resource "aws_network_acl" "private_acl" {
   }
 }
 
+# Commented out VPN configuration
+# Can be uncommented and configured when VPN access is needed
+# Requires valid certificates stored in SSM Parameter Store
 # data "aws_ssm_parameter" "client_vpn_certificate" {
 #   name = "vpn_server_certificate_arn"
 # }
