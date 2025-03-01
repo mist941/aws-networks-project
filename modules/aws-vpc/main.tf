@@ -106,18 +106,9 @@ resource "aws_security_group" "bastion_sg" {
   }
 
   egress {
-    description     = "Allow outbound SSH to private EC2"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.private_ec2_sg.id]
-  }
-
-  egress {
-    description = "Allow outbound HTTPS for updates"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -128,11 +119,11 @@ resource "aws_security_group" "private_ec2_sg" {
   vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
-    description     = "Allow SSH from Bastion Host"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.bastion_sg.id]
+    description = "Allow SSH from Bastion Host"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr_block]
   }
 
   ingress {
@@ -140,7 +131,7 @@ resource "aws_security_group" "private_ec2_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = var.public_subnet_ciders
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
 
   ingress {
@@ -148,12 +139,11 @@ resource "aws_security_group" "private_ec2_sg" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = var.public_subnet_ciders
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
-
   egress {
     from_port   = 0
-    to_port     = 65535
+    to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
