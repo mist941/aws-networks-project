@@ -21,3 +21,17 @@ variable "availability_zones" {
   type        = list(string)
   default     = ["us-east-1a", "us-east-1b"]
 }
+
+variable "bastion_ami" {
+  description = "Bastion AMI"
+  type        = string
+  default     = "ubuntu"
+}
+
+variable "bastion_key_name" {
+  description = "Bastion key name"
+  type        = string
+  default     = "bastion-key"
+}
+
+

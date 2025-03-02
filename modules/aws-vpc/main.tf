@@ -282,6 +282,23 @@ resource "aws_network_acl" "private_acl" {
   }
 }
 
+resource "aws_key_pair" "bastion_key" {
+  key_name   = var.bastion_key_name
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+resource "aws_instance" "bastion_host" {
+  ami                    = var.bastion_ami
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.public_subnets[0].id
+  vpc_security_group_ids = [aws_security_group.bastion_sg.id]
+  key_name               = aws_key_pair.bastion_key.key_name
+
+  tags = {
+    Name = "bastion_host"
+  }
+}
+
 # Commented out VPN configuration
 # Can be uncommented and configured when VPN access is needed
 # Requires valid certificates stored in SSM Parameter Store
