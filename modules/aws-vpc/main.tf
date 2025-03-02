@@ -284,7 +284,7 @@ resource "aws_network_acl" "private_acl" {
 
 resource "aws_key_pair" "bastion_key" {
   key_name   = var.bastion_key_name
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file("${pathexpand("~/.ssh/id_rsa.pub")}")
 }
 
 resource "aws_instance" "bastion_host" {
