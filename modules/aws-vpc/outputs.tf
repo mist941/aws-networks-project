@@ -17,3 +17,11 @@ output "internet_gateway_id" {
   description = "ID of the created internet gateway"
   value       = aws_internet_gateway.main_igw.id
 }
+
+output "bastion_host_public_ip" {
+  description = "Public IP address of the bastion host"
+  value       = aws_instance.bastion_host.public_ip
+}
+
+
+

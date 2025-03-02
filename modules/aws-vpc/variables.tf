@@ -25,7 +25,7 @@ variable "availability_zones" {
 variable "bastion_ami" {
   description = "Bastion AMI"
   type        = string
-  default     = "ubuntu"
+  default     = "ami-04b4f1a9cf54c11d0"
 }
 
 variable "bastion_key_name" {
